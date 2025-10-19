@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Investment CRM Dashboard</title>
+<link href="https://unpkg.com/modern-normalize/modern-normalize.css" rel="stylesheet">
+<style>
+  body{font-family:Segoe UI,Arial,sans-serif;background:#f4f7fb;margin:0;padding:20px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{margin:0;font-size:20px}
+  .controls{display:flex;gap:8px;align-items:center}
+  input.search{padding:8px 10px;font-size:14px;width:320px;border-radius:6px;border:1px solid #cbd5e1}
+  button{padding:8px 12px;border:none;border-radius:6px;background:#1f6feb;color:#fff;cursor:pointer}
+  table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #eef2f7;font-size:13px}
+  th{background:#f1f6ff;font-weight:600}
+  tr:hover td{background:#fcfdff}
+  .badge{display:inline-block;padding:4px 8px;border-radius:12px;background:#e6f4ea;color:#0f5132;font-weight:600;font-size:12px}
+  .small{font-size:12px;color:#6b7280}
+  .toolbar{display:flex;gap:8px}
+  .empty{padding:24px;text-align:center;color:#6b7280}
+  @media(max-width:720px){input.search{width:140px}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1>Investment CRM Dashboard</h1>
+    <div class="small">Quick client lookup • Add / Download • Live or static options</div>
+  </div>
+
+  <div class="controls">
+    <input id="q" class="search" placeholder="Search by Client Name, ID or PAN">
+    <div class="toolbar">
+      <button id="addBtn">➕ Add New Client</button>
+      <button id="downloadBtn">⬇ Download Excel</button>
+      <button id="refreshBtn">⟳ Refresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
+  <div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04)"><strong id="totalClients">0</strong><div class="small">Total clients</div></div>
+  <div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04)"><strong id="establishedCount">0</strong><div class="small">Established</div></div>
+  <div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04)"><strong id="atRiskCount">0</strong><div class="small">At-Risk</div></div>
+</div>
+
+<!-- Table -->
+<div id="tableWrap" style="margin-top:16px">
+  <table id="clientsTable">
+    <thead>
+      <tr>
+        <th>Client ID</th><th>Name</th><th>PAN</th><th>City</th><th>Lifecycle</th><th>Opportunity</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+/* ---------- Sample embedded data (Replace or extend) ---------- */
+const clients = [
+  {"Client ID":"WB000001","Client Name":"Shashi Kant","PAN":"CCPL","Branch":"CCPL","Advisor":"Shashi","City":"Lucknow","Customer Lifecycle":"Established Client","Opportunity":"Child Education"},
+  {"Client ID":"C001","Client Name":"Asha Patel","PAN":"AAAPA1234A","Branch":"Mumbai","Advisor":"Advisor1","City":"Mumbai","Customer Lifecycle":"Established Client","Opportunity":"Retirement Planning"},
+  {"Client ID":"C005","Client Name":"Priya Kapoor","PAN":"EEEPK5678E","Branch":"Pune","Advisor":"Advisor2","City":"Pune","Customer Lifecycle":"At-Risk Client","Opportunity":"Tax Benefits"}
+];
+/* ---------- end sample ---------- */
+
+function renderTable(list){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = "";
+  if(!list.length){ tbody.innerHTML = '<tr><td class="empty" colspan="7">No clients found</td></tr>'; return; }
+  list.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c["Client ID"]||""}</td>
+      <td>${c["Client Name"]||""}</td>
+      <td>${c["PAN"]||""}</td>
+      <td>${c["City"]||""}</td>
+      <td><span class="badge">${c["Customer Lifecycle"]||""}</span></td>
+      <td>${c["Opportunity"]||""}</td>
+      <td><button data-id="${c["Client ID"]}">Open</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateSummary(list);
+}
+
+function updateSummary(list){
+  document.getElementById('totalClients').textContent = list.length;
+  document.getElementById('establishedCount').textContent = list.filter(x=>x["Customer Lifecycle"]==="Established Client").length;
+  document.getElementById('atRiskCount').textContent = list.filter(x=>x["Customer Lifecycle"]==="At-Risk Client").length;
+}
+
+function search(q){
+  const s = q.trim().toLowerCase();
+  if(!s) return clients;
+  return clients.filter(c => (c["Client Name"]||"").toLowerCase().includes(s) ||
+                             (c["Client ID"]||"").toLowerCase().includes(s) ||
+                             (c["PAN"]||"").toLowerCase().includes(s));
+}
+
+/* UI wiring */
+document.getElementById('q').addEventListener('input', e=>{
+  renderTable(search(e.target.value));
+});
+document.getElementById('addBtn').addEventListener('click', ()=> {
+  window.open('https://docs.google.com/forms/d/e/1FAIpQLScrHb0iFchHLCgAOHEHu69aycsf34h726hCR_-xVw5JymIr8A/viewform','_blank');
+});
+document.getElementById('downloadBtn').addEventListener('click', ()=> {
+  window.open('CRM_Master_Template_v3.xlsx','_blank'); // put your hosted URL here
+});
+document.getElementById('refreshBtn').addEventListener('click', ()=> {
+  renderTable(clients);
+});
+document.getElementById('tbody').addEventListener('click', function(e){
+  if(e.target.tagName==='BUTTON'){
+    const id = e.target.dataset.id;
+    alert('Open client view for: ' + id + '\n(You can open Excel/CRM sheet or call VBA via server.)');
+  }
+});
+
+/* initial render */
+renderTable(clients);
+</script>
+</body>
+</html>
